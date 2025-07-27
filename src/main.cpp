@@ -91,7 +91,7 @@ void setup()
     pinMode(RFID_IRQ, INPUT_PULLUP);
     mainTask = xTaskGetCurrentTaskHandle();
     attachInterrupt(digitalPinToInterrupt(RFID_IRQ), rfid_isr, FALLING);
-    
+
     mfrc522.PCD_Init();
 
     mfrc522.PCD_AntennaOn();
@@ -151,7 +151,7 @@ void loop()
 //
 // Timing:
 //   - ESP32 pulls FPGA_WAKE low, waits for READY within T_READY_MS.
-//   - After RESULT received, ESP32 releases WAKE_N high.
+//   - After RESULT received, ESP32 releases FPGA_WAKE high.
 
 
 bool wait_byte(HardwareSerial& port, uint8_t& out, uint32_t timeout_ms) {
