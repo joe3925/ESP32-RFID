@@ -44,8 +44,12 @@ void setup()
     Serial.begin(115200);
     Serial2.begin(115200, SERIAL_8N1, FPGA_RX, FPGA_TX);
 
-    wifi_connect(10000);
-
+    wifi_connect(100000);
+    if(wifi_test(100000) != WifiHealth::Ok){
+        Serial.println(F("WIFI FAIL"));
+    }else{
+         Serial.println(F("WIFI CONNECTED"));
+    }
     SPI.begin(RFID_SCK, RFID_MISO, RFID_MOSI, RFID_SS);
 
     pinMode(RFID_RST, OUTPUT);

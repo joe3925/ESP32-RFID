@@ -1,3 +1,15 @@
 #pragma once
 #include <cstdint>
-bool wifi_connect(uint32_t timeout_ms = 10000);
+
+enum class WifiHealth : uint8_t {
+    NotConnected,   
+    DnsFail,        
+    TcpFail,        
+    Ok
+};
+
+bool wifi_connect(uint32_t timeout_ms);
+
+WifiHealth wifi_test(uint32_t timeout_ms);
+
+
