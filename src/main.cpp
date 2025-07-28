@@ -63,7 +63,7 @@ void setup()
     MFRC522Debug::PCD_DumpVersionToSerial(mfrc522, Serial);
     if (mfrc522.PCD_PerformSelfTest())
     {
-        Serial.println(F("self test succses"));
+        Serial.println(F("self test success"));
     }
     else
     {
