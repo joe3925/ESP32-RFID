@@ -8,7 +8,8 @@
 #include <MFRC522Debug.h>
 #include <const.hpp>
 #include <fpga.hpp>
-
+#include <WiFi.h>
+#include <wifi.hpp>
 
 MFRC522DriverPinSimple ss_pin(RFID_SS);
 SPIClass &spiClass = SPI;
@@ -43,6 +44,8 @@ void setup()
     Serial.begin(115200);
     Serial2.begin(115200, SERIAL_8N1, FPGA_RX, FPGA_TX);
 
+    wifi_connect(10000);
+
     SPI.begin(RFID_SCK, RFID_MISO, RFID_MOSI, RFID_SS);
 
     pinMode(RFID_RST, OUTPUT);
@@ -70,6 +73,7 @@ void setup()
     mfrc522.PCD_Init();
 
     mfrc522.PCD_AntennaOn();
+
     arm_irq();
 
     mfrc522.PCD_ClearRegisterBitMask(MFRC522Constants::TxControlReg, 0xFF);

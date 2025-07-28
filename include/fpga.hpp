@@ -3,17 +3,6 @@
 #include <cstdint>
 #include <HardwareSerial.h>
 
-bool wait_byte(HardwareSerial& port, uint8_t& out, uint32_t timeout_ms) {
-    uint32_t start = millis();
-    while ((millis() - start) < timeout_ms) {
-        if (port.available()) {
-            out = static_cast<uint8_t>(port.read());
-            return true;
-        }
-    }
-    return false;
-}
-
 struct WakeGuard {
     int pin;
     WakeGuard(int p) : pin(p) { digitalWrite(pin, LOW); delayMicroseconds(5); }

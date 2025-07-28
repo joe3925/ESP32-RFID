@@ -57,7 +57,7 @@
 //     0xEF = storage full / error
 //
 
-FpgaReply fpga_uid_transaction(uint8_t cmd, const uint8_t* uid, uint8_t len) {
+FpgaReply fpga_uid_transaction(FpgaCommand cmd, const uint8_t* uid, uint8_t len) {
     WakeGuard wg(FPGA_WAKE);                 
     while (Serial2.available()) Serial2.read(); 
 
@@ -68,7 +68,7 @@ FpgaReply fpga_uid_transaction(uint8_t cmd, const uint8_t* uid, uint8_t len) {
     uint8_t crc = crc8(uid, len);
 
     Serial2.write(FRAME_MAGIC);
-    Serial2.write(cmd);
+    Serial2.write((uint8_t)cmd);
     Serial2.write(len);
     Serial2.write(uid, len);
     Serial2.write(crc);
@@ -81,11 +81,11 @@ FpgaReply fpga_uid_transaction(uint8_t cmd, const uint8_t* uid, uint8_t len) {
 }
 
 bool fpga_is_allowed(const uint8_t* uid, uint8_t len) {
-    auto r = fpga_uid_transaction(CMD_CHECK_UID, uid, len);
+    auto r = fpga_uid_transaction(FpgaCommand::CMD_CHECK_UID, uid, len);
     return r.status == FpgaStatus::Ok && r.result == RES_ALLOW;
 }
 
 bool fpga_authorize_uid(const uint8_t* uid, uint8_t len) {
-    auto r = fpga_uid_transaction(CMD_ADD_UID, uid, len);
+    auto r = fpga_uid_transaction(FpgaCommand::CMD_ADD_UID, uid, len);
     return r.status == FpgaStatus::Ok && r.result == RES_OK;
 }

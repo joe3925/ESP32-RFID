@@ -19,12 +19,12 @@ constexpr int FPGA_TX = 17;
 constexpr uint8_t FRAME_MAGIC   = 0xA5;
 constexpr uint8_t FPGA_READY    = 0x52;
 
-constexpr uint8_t CMD_CHECK_UID = 0x10; 
-constexpr uint8_t CMD_ADD_UID   = 0x11; 
-
 constexpr uint8_t RES_ALLOW     = 0x01;
 constexpr uint8_t RES_DENY      = 0x00;
 constexpr uint8_t RES_OK        = 0x02; 
 
 constexpr uint32_t READY_TIMEOUT_MS = 20;
 constexpr uint32_t RESP_TIMEOUT_MS  = 50;
+
+constexpr char* WIFI_SSID = "Sunny 2.4Ghz";
+constexpr char* WIFI_PASS = "8943667abc";
