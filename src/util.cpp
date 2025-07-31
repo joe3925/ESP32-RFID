@@ -1,5 +1,10 @@
+// Utility/helper functions. 
+// Look here for reusable logic that could use clarification.
 #include <HardwareSerial.h>
 #include <util.hpp>
+
+// Calculates a CRC8 checksum to check if data is correct
+// It goes through each byte and scrambles it in a special way to get one number back.
 uint8_t crc8(const uint8_t* d, size_t n){
     uint8_t c = 0x00;
     for(size_t i=0;i<n;i++){

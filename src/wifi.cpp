@@ -1,3 +1,5 @@
+// Manages Wi-Fi/Network logic—commenting on connection steps and error handling
+
 #include <WiFiType.h>
 #include <esp32-hal.h>
 #include <WiFi.h>

@@ -1,3 +1,5 @@
+// Contains constants or pins with roles
+
 #pragma once
 
 #include <cstdint>
