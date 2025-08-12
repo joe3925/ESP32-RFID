@@ -13,10 +13,14 @@ constexpr uint8_t RFID_IRQ = 22;
 constexpr uint8_t LCD_D7 = 13;
 constexpr uint8_t LCD_D6 = 14;
 constexpr uint8_t LCD_D5 = 27;
-constexpr uint8_t LCD_D4 = 26;
+constexpr uint8_t LCD_D4 = 19;
 constexpr uint8_t LCD_RW = 23;
 constexpr uint8_t LCD_RS = 22;
 constexpr uint8_t LCD_E = 25;
+constexpr uint8_t LCD_VO = 26;
+
+constexpr uint8_t LCD_COLS = 16;
+constexpr uint8_t LCD_ROWS = 2;
 
 // Only one dio is needed for the led. High is auth
 constexpr uint8_t LED = 32;

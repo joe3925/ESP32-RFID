@@ -1,11 +1,7 @@
 #include <Arduino.h>
 #include <SPI.h>
+#include <LiquidCrystal.h>
 
-#include <MFRC522v2.h>
-#include <MFRC522DriverSPI.h>
-#include <MFRC522DriverPinSimple.h>
-#include <MFRC522Constants.h>
-#include <MFRC522Debug.h>
 #include <const.hpp>
 #include <fpga.hpp>
 #include <WiFi.h>
@@ -13,11 +9,8 @@
 #include <Firebase_ESP_Client.h>
 #include <env.hpp>
 
-MFRC522DriverPinSimple ss_pin(RFID_SS);
-SPIClass &spiClass = SPI;
-const SPISettings spiSettings(4000000, MSBFIRST, SPI_MODE0);
-MFRC522DriverSPI driver{ss_pin, spiClass, spiSettings};
-MFRC522 mfrc522{driver};
+LiquidCrystal lcd(LCD_RS, LCD_RW, LCD_E, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
+
 #define FIREBASE_PROJECT_ID "cecs-project-b8bfe"
 
 #define FIREBASE_RTDB_URL "cecs-project-b8bfe-default-rtdb.firebaseio.com"
@@ -25,6 +18,7 @@ TaskHandle_t mainTask = nullptr;
 FirebaseData db;
 FirebaseConfig cfg;
 FirebaseAuth auth;
+MB_String user_base;
 
 void IRAM_ATTR rfid_isr()
 {
@@ -39,17 +33,18 @@ void IRAM_ATTR rfid_isr()
 
 static inline void arm_irq()
 {
-    mfrc522.PCD_ClearRegisterBitMask(MFRC522Constants::ComIEnReg, 0xFF);
-    mfrc522.PCD_SetRegisterBitMask(MFRC522Constants::ComIEnReg, 0x20);
-
-    // Clear pending IRQ flags
-    mfrc522.PCD_SetRegisterBitMask(MFRC522Constants::ComIrqReg, 0x7F);
 }
 
 void setup()
 {
     Serial.begin(115200);
     Serial2.begin(115200, SERIAL_8N1, FPGA_RX, FPGA_TX);
+
+    dacWrite(LCD_VO, 0);
+    lcd.begin(LCD_COLS, LCD_ROWS);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Hello, world!");
 
     wifi_connect(10000);
     if (wifi_test(100000) != WifiHealth::Ok)
@@ -107,32 +102,26 @@ void loop()
 {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    mfrc522.PCD_SetRegisterBitMask(MFRC522Constants::ComIrqReg, 0x7F);
-
-    if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial())
+    if (false)
     {
         Serial.print(F("UID: "));
-        for (byte i = 0; i < mfrc522.uid.size; ++i)
-            Serial.printf("%02X ", mfrc522.uid.uidByte[i]);
-        Serial.println();
+        // for (byte i = 0; i < mfrc522.uid.size; ++i)
+        //     Serial.printf("%02X ", mfrc522.uid.uidByte[i]);
+        // Serial.println();
 
-        bool allowed = fpga_is_allowed(mfrc522.uid.uidByte, mfrc522.uid.size);
-        log_scan_event(mfrc522.uid.uidByte, mfrc522.uid.size, allowed);
-
+        // bool allowed = fpga_is_allowed(mfrc522.uid.uidByte, mfrc522.uid.size);
+        // log_scan_event(mfrc522.uid.uidByte, mfrc522.uid.size, allowed);
+        bool allowed = false;
         if (allowed)
         {
             digitalWrite(LED, HIGH);
             delay(1000);
             digitalWrite(LED, LOW);
         }
-
-        mfrc522.PICC_HaltA();
-        mfrc522.PCD_StopCrypto1();
     }
 
     arm_irq();
 }
-MB_String user_base;
 
 static MB_String uid_hex(const byte *uid, byte len)
 {
