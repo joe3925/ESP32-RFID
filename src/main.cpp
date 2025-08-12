@@ -8,8 +8,10 @@
 #include <wifi.hpp>
 #include <Firebase_ESP_Client.h>
 #include <env.hpp>
+#include <Adafruit_PN532.h>
 
 LiquidCrystal lcd(LCD_RS, LCD_RW, LCD_E, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
+Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 
 #define FIREBASE_PROJECT_ID "cecs-project-b8bfe"
 
@@ -19,7 +21,7 @@ FirebaseData db;
 FirebaseConfig cfg;
 FirebaseAuth auth;
 MB_String user_base;
-
+static void log_scan_event(const byte *uid, byte len, bool allowed);
 void IRAM_ATTR rfid_isr()
 {
     if (mainTask)
@@ -33,8 +35,32 @@ void IRAM_ATTR rfid_isr()
 
 static inline void arm_irq()
 {
+     nfc.SAMConfig();
+     nfc.startPassiveTargetIDDetection(PN532_MIFARE_ISO14443A);
+
 }
 
+void lcdPrintf(const char *fmt, ...) {
+    char buf[33]; 
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+
+    for (int i = 0; i < 16 && buf[i] != '\0'; i++) {
+        lcd.print(buf[i]);
+    }
+
+    if (strlen(buf) > 16) {
+        lcd.setCursor(0, 1);
+        for (int i = 16; i < 32 && buf[i] != '\0'; i++) {
+            lcd.print(buf[i]);
+        }
+    }
+}
 void setup()
 {
     Serial.begin(115200);
@@ -50,24 +76,31 @@ void setup()
     if (wifi_test(100000) != WifiHealth::Ok)
     {
         Serial.println(F("WIFI FAIL"));
+        lcdPrintf("No wifi");
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     }
     else
     {
         Serial.println(F("WIFI CONNECTED"));
     }
 
-    pinMode(RFID_RST, OUTPUT);
-    digitalWrite(RFID_RST, HIGH);
+    nfc.begin();
+    
+    uint32_t versiondata = nfc.getFirmwareVersion();
+    if (! versiondata) {
+    Serial.println("Didn't find PN53x board");
+        lcdPrintf("Faulted");
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    } 
 
     pinMode(LED, OUTPUT);
     digitalWrite(LED, LOW);
 
-    pinMode(RFID_IRQ, INPUT_PULLUP);
+    pinMode(PN532_IRQ  , INPUT_PULLUP);
 
     mainTask = xTaskGetCurrentTaskHandle();
-    attachInterrupt(digitalPinToInterrupt(RFID_IRQ), rfid_isr, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PN532_IRQ), rfid_isr, FALLING);
 
-    arm_irq();
 
     cfg.api_key = API_KEY_REAL;
     cfg.database_url = DATABASE_URL_REAL;
@@ -86,6 +119,9 @@ void setup()
     if (!Firebase.ready())
     {
         Serial.println("Firebase not ready after 15s — check API key, Email/Password provider, and DB URL.");
+        lcdPrintf("Firebase failed");
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
     }
     else
     {
@@ -94,31 +130,41 @@ void setup()
 
     user_base = MB_String("/users/") + auth.token.uid;
     Firebase.RTDB.setString(&db, (user_base + "/status").c_str(), "Online");
+    arm_irq();
 
     Serial.println(F("Waiting for cards..."));
+    lcdPrintf("Ready");
 }
 
 void loop()
 {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    if (false)
-    {
-        Serial.print(F("UID: "));
-        // for (byte i = 0; i < mfrc522.uid.size; ++i)
-        //     Serial.printf("%02X ", mfrc522.uid.uidByte[i]);
-        // Serial.println();
+    uint8_t uid[7];
+    uint8_t uidLength;
+    lcdPrintf("Card detected");
+    if (nfc.readDetectedPassiveTargetID(uid, &uidLength)) {
+        for (byte i = 0; i < uidLength; ++i)
+            Serial.printf("%02X ", uid);
+        Serial.println();
 
-        // bool allowed = fpga_is_allowed(mfrc522.uid.uidByte, mfrc522.uid.size);
-        // log_scan_event(mfrc522.uid.uidByte, mfrc522.uid.size, allowed);
-        bool allowed = false;
-        if (allowed)
-        {
-            digitalWrite(LED, HIGH);
-            delay(1000);
-            digitalWrite(LED, LOW);
+        bool allowed = fpga_is_allowed(uid, uidLength);
+        if (allowed){
+            lcdPrintf("Approved!");
+        }else{
+            lcdPrintf("Not auth");
         }
+        log_scan_event(uid, uidLength, allowed);
+        Serial.print(F("UID: "));
+        for (byte i = 0; i < uidLength; i++) {
+            Serial.printf("%02X ", uid[i]);
+        }
+        Serial.println();
+    } else {
+        Serial.println(F("IRQ fired but no card found"));
     }
+    sleep(3000);
+    lcdPrintf("Ready");
 
     arm_irq();
 }

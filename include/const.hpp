@@ -3,12 +3,11 @@
 #pragma once
 
 #include <cstdint>
-constexpr uint8_t RFID_SS = 5;
-constexpr uint8_t RFID_SCK = 18;
-constexpr uint8_t RFID_MOSI = 23;
-constexpr uint8_t RFID_MISO = 19;
-constexpr uint8_t RFID_RST = 21;
-constexpr uint8_t RFID_IRQ = 22;
+#define PN532_SCK  (15)
+#define PN532_MOSI (4)
+#define PN532_SS   (16)
+#define PN532_MISO (17)
+#define PN532_IRQ (2)
 
 constexpr uint8_t LCD_D7 = 13;
 constexpr uint8_t LCD_D6 = 14;
@@ -40,5 +39,5 @@ constexpr uint8_t RES_OK = 0x02;
 constexpr uint32_t READY_TIMEOUT_MS = 20;
 constexpr uint32_t RESP_TIMEOUT_MS = 50;
 
-constexpr char WIFI_SSID[] = "Sunny 2.4Ghz";
-constexpr char WIFI_PASS[] = "8943667abc";
+constexpr char WIFI_SSID[] = "Area51";
+constexpr char WIFI_PASS[] = "GreenTD70!#%";
