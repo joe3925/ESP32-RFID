@@ -4,15 +4,15 @@
 
 #include <cstdint>
 #define PN532_SCL (22)
-#define PN532_SDA (21) 
-#define PN532_IRQ (16)
+#define PN532_SDA (21)
+#define PN532_IRQ (34)
 #define PN532_RSC (32)
 constexpr uint8_t LCD_D7 = 13;
 constexpr uint8_t LCD_D6 = 14;
 constexpr uint8_t LCD_D5 = 27;
 constexpr uint8_t LCD_D4 = 19;
 constexpr uint8_t LCD_RW = 23;
-constexpr uint8_t LCD_RS = 17;
+constexpr uint8_t LCD_RS = 18;
 constexpr uint8_t LCD_E = 25;
 constexpr uint8_t LCD_VO = 26;
 
@@ -24,8 +24,8 @@ constexpr uint8_t LED = 32;
 
 constexpr uint8_t FPGA_WAKE = 13;
 
-constexpr int FPGA_RX = 1;
-constexpr int FPGA_TX = 3;
+constexpr int FPGA_RX = 16;
+constexpr int FPGA_TX = 17;
 
 constexpr uint8_t FRAME_MAGIC = 0xA5;
 constexpr uint8_t FPGA_READY = 0x52;
