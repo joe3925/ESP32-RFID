@@ -11,7 +11,8 @@
 #include <Adafruit_PN532.h>
 #include <Wire.h>
 LiquidCrystal lcd(LCD_RS, LCD_RW, LCD_E, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
-Adafruit_PN532 *nfc = nullptr;
+
+Adafruit_PN532 nfc = Adafruit_PN532(PN532_IRQ, PN532_RSC);
 
 #define FIREBASE_PROJECT_ID "cecs-project-b8bfe"
 
@@ -29,15 +30,16 @@ void IRAM_ATTR rfid_isr()
     {
         BaseType_t hpw = pdFALSE;
         vTaskNotifyGiveFromISR(mainTask, &hpw);
-        if (hpw)
+        if (hpw){
             portYIELD_FROM_ISR();
+        }
     }
 }
 
 static inline void arm_irq()
 {
-    (*nfc).SAMConfig();
-    (*nfc).startPassiveTargetIDDetection(PN532_MIFARE_ISO14443A);
+    (nfc).SAMConfig();
+    (nfc).startPassiveTargetIDDetection(PN532_MIFARE_ISO14443A);
 }
 
 void lcdPrintf(const char *fmt, ...)
@@ -71,12 +73,13 @@ void setup()
     while (!Serial)
         ;
 
-    Serial2.begin(115200, SERIAL_8N1, FPGA_RX, FPGA_TX);
+    Serial2.begin(115200, SERIAL_8N1, ESP_32_RX, ESP_32_TX);
+    pinMode(PN532_SDA, INPUT_PULLUP);
+    pinMode(PN532_SCL, INPUT_PULLUP);
+    pinMode(PN532_RSC, OUTPUT);
     Wire.begin(PN532_SDA, PN532_SCL);
     // Wire.setClock(100000);
-
-    nfc = new Adafruit_PN532(PN532_IRQ, PN532_RSC, &Wire);
-    dacWrite(LCD_VO, 0);
+    
     lcd.begin(LCD_COLS, LCD_ROWS);
     lcd.clear();
     lcd.setCursor(0, 0);
@@ -94,20 +97,22 @@ void setup()
         Serial.println(F("WIFI CONNECTED"));
     }
 
-    //(*nfc).begin();
+    (nfc).begin();
 
-    // uint32_t versiondata = (*nfc).getFirmwareVersion();
-    // if (!versiondata)
-    // {
-    //     Serial.println("Didn't find PN53x board");
-    //     // lcdPrintf("Faulted");
-    //     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    // }
+    uint32_t versiondata = (nfc).getFirmwareVersion();
+    if (!versiondata)
+    {
+        Serial.println("Didn't find PN53x board");
+        lcdPrintf("Faulted");
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    }else{
+        Serial.println("found PN53x");
+    }
 
-    // pinMode(PN532_IRQ, INPUT_PULLUP);
+    pinMode(PN532_IRQ, INPUT_PULLUP);
 
-    // mainTask = xTaskGetCurrentTaskHandle();
-    // attachInterrupt(digitalPinToInterrupt(PN532_IRQ), rfid_isr, FALLING);
+    mainTask = xTaskGetCurrentTaskHandle();
+    attachInterrupt(digitalPinToInterrupt(PN532_IRQ), rfid_isr, FALLING);
 
     cfg.api_key = API_KEY_REAL;
     cfg.database_url = DATABASE_URL_REAL;
@@ -136,17 +141,10 @@ void setup()
 
     user_base = MB_String("/users/") + auth.token.uid;
     Firebase.RTDB.setString(&db, (user_base + "/status").c_str(), "Online");
-    // arm_irq();
+    arm_irq();
 
     Serial.println(F("Waiting for cards..."));
     lcdPrintf("Ready");
-
-    static const uint8_t DUMMY_UID[16] = {
-        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-        0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
-
-    (void)fpga_is_allowed(DUMMY_UID, (uint32_t)sizeof(DUMMY_UID));
-    Serial.println(F("Waiting for cards..."));
 }
 
 void loop()
@@ -155,29 +153,29 @@ void loop()
 
     uint8_t uid[7];
     uint8_t uidLength;
-    // if ((*nfc).readDetectedPassiveTargetID(uid, &uidLength)) {
-    //     lcdPrintf("Card detected");
-    //     // for (byte i = 0; i < uidLength; ++i)
-    //     //     Serial.printf("%02X ", uid);
-    //     // Serial.println();
+    if ((nfc).readDetectedPassiveTargetID(uid, &uidLength)) {
+        lcdPrintf("Card detected");
+        for (byte i = 0; i < uidLength; ++i)
+            Serial.printf("%02X ", uid);
+        Serial.println();
 
-    //     // bool allowed = fpga_is_allowed(uid, uidLength);
-    //     // if (allowed){
-    //     //     lcdPrintf("Approved!");
-    //     // }else{
-    //     //     lcdPrintf("Not auth");
-    //     // }
-    //     // log_scan_event(uid, uidLength, allowed);
-    //     // Serial.print(F("UID: "));
-    //     // for (byte i = 0; i < uidLength; i++) {
-    //     //     Serial.printf("%02X ", uid[i]);
-    //     // }
-    //     // Serial.println();
-    // } else {
-    //     Serial.println(F("IRQ fired but no card found"));
-    // }
-    // vTaskDelay(3000);
-    // lcdPrintf("Ready");
+        bool allowed = fpga_is_allowed(uid, uidLength);
+        if (allowed){
+            lcdPrintf("Approved!");
+             Serial.println(F("Approved!"));
+        }else{
+            lcdPrintf("Not auth");
+             Serial.println(F("Not auth"));
+        }
+        // log_scan_event(uid, uidLength, allowed);
+        Serial.print(F("UID: "));
+        for (byte i = 0; i < uidLength; i++) {
+            Serial.printf("%02X ", uid[i]);
+        }
+        Serial.println();
+        vTaskDelay(3000);
+    }
+    lcdPrintf("Ready");
 
     arm_irq();
 }
