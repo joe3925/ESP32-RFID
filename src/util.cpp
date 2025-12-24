@@ -17,19 +17,38 @@ uint8_t crc8(const uint8_t *d, size_t n)
     }
     return c;
 }
+// bool wait_byte(HardwareSerial &port, uint8_t &out, uint32_t timeout_ms)
+// {
+//     uint32_t start = millis();
+//     // while ((millis() - start) < timeout_ms)
+//     while (true)
+//     {
+//         while (port.available() > 0)
+//         {
+//             int b = port.read();
+//             Serial.printf("%02X\n", b);
+//             out = (uint8_t)b;
+//             // return true;
+//         }
+//     }
+//     return false;
+// }
 bool wait_byte(HardwareSerial &port, uint8_t &out, uint32_t timeout_ms)
 {
     uint32_t start = millis();
-    // while ((millis() - start) < timeout_ms)
-    while (true)
+    while ((uint32_t)(millis() - start) < timeout_ms)
     {
-        while (port.available() > 0)
+        if (port.available() > 0)
         {
             int b = port.read();
-            Serial.printf("%02X\n", b);
-            out = (uint8_t)b;
-            // return true;
+            if (b >= 0)
+            {
+                out = (uint8_t)b;
+                Serial.printf("%02X\n", out);
+                return true;
+            }
         }
+        delay(1);
     }
     return false;
 }
