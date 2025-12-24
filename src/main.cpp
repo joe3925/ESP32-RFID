@@ -76,6 +76,10 @@ void setup()
     pinMode(PN532_SDA, INPUT_PULLUP);
     pinMode(PN532_SCL, INPUT_PULLUP);
     pinMode(PN532_RSC, OUTPUT);
+
+    pinMode(FPGA_WAKE, OUTPUT);
+    digitalWrite(FPGA_WAKE, HIGH);
+
     Wire.begin(PN532_SDA, PN532_SCL);
     // Wire.setClock(100000);
 
@@ -115,33 +119,33 @@ void setup()
     mainTask = xTaskGetCurrentTaskHandle();
     attachInterrupt(digitalPinToInterrupt(PN532_IRQ), rfid_isr, FALLING);
 
-    cfg.api_key = API_KEY_REAL;
-    cfg.database_url = DATABASE_URL_REAL;
-    auth.user.email = EMAIL;
-    auth.user.password = PASSWORD;
+    // cfg.api_key = API_KEY_REAL;
+    // cfg.database_url = DATABASE_URL_REAL;
+    // auth.user.email = EMAIL;
+    // auth.user.password = PASSWORD;
 
-    Firebase.begin(&cfg, &auth);
-    Firebase.reconnectNetwork(true);
+    // Firebase.begin(&cfg, &auth);
+    // Firebase.reconnectNetwork(true);
 
-    uint32_t t0 = millis();
-    while (!Firebase.ready() && millis() - t0 < 15000)
-    {
-        delay(50);
-    }
+    // uint32_t t0 = millis();
+    // while (!Firebase.ready() && millis() - t0 < 15000)
+    // {
+    //     delay(50);
+    // }
 
-    if (!Firebase.ready())
-    {
-        Serial.println("Firebase not ready after 15s — check API key, Email/Password provider, and DB URL.");
-        lcdPrintf("Firebase failed");
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    }
-    else
-    {
-        Serial.println("Signed in");
-    }
+    // if (!Firebase.ready())
+    // {
+    //     Serial.println("Firebase not ready after 15s — check API key, Email/Password provider, and DB URL.");
+    //     lcdPrintf("Firebase failed");
+    //     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    // }
+    // else
+    // {
+    //     Serial.println("Signed in");
+    // }
 
-    user_base = MB_String("/users/") + auth.token.uid;
-    Firebase.RTDB.setString(&db, (user_base + "/status").c_str(), "Online");
+    // user_base = MB_String("/users/") + auth.token.uid;
+    // Firebase.RTDB.setString(&db, (user_base + "/status").c_str(), "Online");
     arm_irq();
 
     Serial.println(F("Waiting for cards..."));
