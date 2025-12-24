@@ -1,0 +1,31 @@
+name: CI CD for C/C++ Projects with PlatformIO
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses:  actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    
+    - name:  Install PlatformIO
+      run: |
+        pip install -U platformio
+    
+    - name: Check code format
+      run: |
+        pio check --skip-packages --flags "--enable=all"
+      continue-on-error: true
+    
+    - name: Build PlatformIO project
+      run:  pio run -e esp32dev
