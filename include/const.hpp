@@ -33,5 +33,5 @@ constexpr uint8_t RES_OK = 0x02;
 constexpr uint32_t READY_TIMEOUT_MS = 1000;
 constexpr uint32_t RESP_TIMEOUT_MS = 1000;
 
-constexpr char WIFI_SSID[] = "Area51";
-constexpr char WIFI_PASS[] = "GreenTD70!#%";
+constexpr char WIFI_SSID[] = "SpectrumSetup-90";
+constexpr char WIFI_PASS[] = "BexBright1519";

@@ -115,7 +115,7 @@ void setup()
     mainTask = xTaskGetCurrentTaskHandle();
     attachInterrupt(digitalPinToInterrupt(PN532_IRQ), rfid_isr, FALLING);
 
-    cfg.api_key = API_KEY_REAL;
+    /* cfg.api_key = API_KEY_REAL;
     cfg.database_url = DATABASE_URL_REAL;
     auth.user.email = EMAIL;
     auth.user.password = PASSWORD;
@@ -141,7 +141,7 @@ void setup()
     }
 
     user_base = MB_String("/users/") + auth.token.uid;
-    Firebase.RTDB.setString(&db, (user_base + "/status").c_str(), "Online");
+    Firebase.RTDB.setString(&db, (user_base + "/status").c_str(), "Online"); */
     arm_irq();
 
     Serial.println(F("Waiting for cards..."));
