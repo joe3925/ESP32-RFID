@@ -66,8 +66,8 @@ FpgaReply fpga_uid_transaction(FpgaCommand cmd, const uint8_t *uid, uint8_t len)
 {
 
     WakeGuard wg(FPGA_WAKE); // Wake FPGA (pull LOW)
-    // while (Serial2.available())
-    //     Serial2.read(); // Clear old data
+     while (Serial2.available())
+         Serial2.read(); // Clear old data
 
     uint8_t b;
     if (!wait_byte(Serial2, b, READY_TIMEOUT_MS))

@@ -5,7 +5,7 @@
 #include <cstdint>
 #define PN532_SCL (22)
 #define PN532_SDA (21)
-#define PN532_IRQ (34)
+#define PN532_IRQ (26)
 #define PN532_RSC (32)
 constexpr uint8_t LCD_D7 = 13;
 constexpr uint8_t LCD_D6 = 14;
