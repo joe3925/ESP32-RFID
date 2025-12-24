@@ -70,8 +70,6 @@ FpgaReply fpga_uid_transaction(FpgaCommand cmd, const uint8_t *uid, uint8_t len)
         Serial2.read(); // Clear old data
 
     uint8_t b;
-    WakeGuard wg(FPGA_WAKE);
-
     if (!wait_byte(Serial2, b, READY_TIMEOUT_MS))
     {
         Serial.println(F("fpga timeout 1"));
