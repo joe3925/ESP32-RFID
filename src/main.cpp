@@ -146,6 +146,9 @@ void setup()
 
     Serial.println(F("Waiting for cards..."));
     lcdPrintf("Ready");
+    static const uint8_t test_uid[7] = {0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56};
+    static const uint8_t test_uid_len = 7;
+    bool allowed = fpga_is_allowed(test_uid, test_uid_len);
 }
 
 void loop()
