@@ -62,11 +62,10 @@
 
 // This function sends a command and UID to FPGA and waits for a reply.
 
-FpgaReply fpga_uid_transaction(FpgaCommand cmd, const uint8_t* uid, uint8_t len) {
-    
-    WakeGuard wg(FPGA_WAKE);       // Wake FPGA (pull LOW)           
-    while (Serial2.available()) Serial2.read();  // Clear old data
+FpgaReply fpga_uid_transaction(FpgaCommand cmd, const uint8_t *uid, uint8_t len)
+{
 
+    WakeGuard wg(FPGA_WAKE); // Wake FPGA (pull LOW)
     uint8_t b;
     if (!wait_byte(Serial2, b, READY_TIMEOUT_MS) || b != FPGA_READY)
         return {FpgaStatus::TimeoutReady, 0};
@@ -82,17 +81,24 @@ FpgaReply fpga_uid_transaction(FpgaCommand cmd, const uint8_t* uid, uint8_t len)
 
     uint8_t resp;
     if (!wait_byte(Serial2, resp, RESP_TIMEOUT_MS))
+    {
+        Serial.println(F("fpga timeout"));
         return {FpgaStatus::TimeoutResp, 0};
+    }
 
+    Serial.println(F("fpga ok"));
     return {FpgaStatus::Ok, resp};
 }
 
-bool fpga_is_allowed(const uint8_t* uid, uint8_t len) {
+bool fpga_is_allowed(const uint8_t *uid, uint8_t len)
+{
     auto r = fpga_uid_transaction(FpgaCommand::CMD_CHECK_UID, uid, len);
+    print_reply(r);
     return r.status == FpgaStatus::Ok && r.result == RES_ALLOW;
 }
 
-bool fpga_authorize_uid(const uint8_t* uid, uint8_t len) {
+bool fpga_authorize_uid(const uint8_t *uid, uint8_t len)
+{
     auto r = fpga_uid_transaction(FpgaCommand::CMD_ADD_UID, uid, len);
     return r.status == FpgaStatus::Ok && r.result == RES_OK;
 }
