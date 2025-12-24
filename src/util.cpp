@@ -52,7 +52,7 @@ bool wait_byte(HardwareSerial &port, uint8_t &out, uint32_t timeout_ms)
     }
     return false;
 }
-char *status_str(FpgaStatus s)
+const char *status_str(FpgaStatus s)
 {
     switch (s)
     {
