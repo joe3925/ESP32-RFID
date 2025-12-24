@@ -11,7 +11,10 @@
 #include <Adafruit_PN532.h>
 #include <Wire.h>
 LiquidCrystal lcd(LCD_RS, LCD_RW, LCD_E, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
+
 Adafruit_PN532 nfc = Adafruit_PN532(PN532_IRQ, PN532_RSC);
+
+#define FIREBASE_PROJECT_ID "cecs-project-b8bfe"
 
 TaskHandle_t mainTask = nullptr;
 FirebaseData db;
@@ -26,7 +29,9 @@ void IRAM_ATTR rfid_isr()
         BaseType_t hpw = pdFALSE;
         vTaskNotifyGiveFromISR(mainTask, &hpw);
         if (hpw)
+        {
             portYIELD_FROM_ISR();
+        }
     }
 }
 
@@ -67,7 +72,7 @@ void setup()
     while (!Serial)
         ;
 
-    Serial2.begin(115200, SERIAL_8N1, FPGA_RX, FPGA_TX);
+    Serial2.begin(115200, SERIAL_8N1, ESP_32_RX, ESP_32_TX);
     pinMode(PN532_SDA, INPUT_PULLUP);
     pinMode(PN532_SCL, INPUT_PULLUP);
     pinMode(PN532_RSC, OUTPUT);
@@ -99,6 +104,10 @@ void setup()
         Serial.println("Didn't find PN53x board");
         lcdPrintf("Faulted");
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    }
+    else
+    {
+        Serial.println("found PN53x");
     }
 
     pinMode(PN532_IRQ, INPUT_PULLUP);

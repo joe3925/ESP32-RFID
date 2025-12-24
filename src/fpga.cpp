@@ -66,12 +66,30 @@ FpgaReply fpga_uid_transaction(FpgaCommand cmd, const uint8_t *uid, uint8_t len)
 {
 
     WakeGuard wg(FPGA_WAKE); // Wake FPGA (pull LOW)
-    uint8_t b;
-    if (!wait_byte(Serial2, b, READY_TIMEOUT_MS) || b != FPGA_READY)
-        return {FpgaStatus::TimeoutReady, 0};
+    while (Serial2.available())
+        Serial2.read(); // Clear old data
 
-    // TODO: CRC should include CMD, LEN, and UID, not just UID
+    uint8_t b;
+    WakeGuard wg(FPGA_WAKE);
+
+    if (!wait_byte(Serial2, b, READY_TIMEOUT_MS))
+    {
+        Serial.println(F("fpga timeout 1"));
+        return {FpgaStatus::TimeoutReady, 0};
+    }
+    Serial.printf("RX 0x%02X\n", b);
+    if (b != FPGA_READY)
+    {
+        Serial.println(F("fpga timeout 1"));
+        return {FpgaStatus::TimeoutReady, 0};
+    }
+
     uint8_t crc = crc8(uid, len);
+
+    while (Serial2.available())
+    {
+        Serial2.read();
+    }
 
     Serial2.write(FRAME_MAGIC);
     Serial2.write((uint8_t)cmd);
@@ -84,6 +102,13 @@ FpgaReply fpga_uid_transaction(FpgaCommand cmd, const uint8_t *uid, uint8_t len)
     {
         Serial.println(F("fpga timeout"));
         return {FpgaStatus::TimeoutResp, 0};
+    }
+
+    Serial.printf("RX 0x%02X\n", resp);
+    while (Serial2.available())
+    {
+        uint8_t byte = Serial2.read();
+        Serial.printf("RX 0x%02X\n", byte);
     }
 
     Serial.println(F("fpga ok"));
