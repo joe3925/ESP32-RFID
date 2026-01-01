@@ -3,7 +3,20 @@
 #include <cstddef>
 #include <cstdint>
 #include <fpga.hpp>
-uint8_t crc8(const uint8_t *d, size_t n);
-bool wait_byte(HardwareSerial &port, uint8_t &out, uint32_t timeout_ms);
-const char *status_str(FpgaStatus s);
-void print_reply(const FpgaReply &r);
+static inline uint8_t crc8_update_msb_0x07(uint8_t crc, uint8_t data)
+{
+    crc ^= data;
+    for (int i = 0; i < 8; i++)
+    {
+        if (crc & 0x80)
+            crc = (uint8_t)((crc << 1) ^ 0x07);
+        else
+            crc = (uint8_t)(crc << 1);
+    }
+    return crc;
+}
+uint8_t fpga_crc8_cmd_len_payload(uint8_t cmd, uint8_t len,
+                                  const uint8_t* payload);
+bool wait_byte(HardwareSerial& port, uint8_t& out, uint32_t timeout_ms);
+const char* status_str(FpgaStatus s);
+void print_reply(const FpgaReply& r);

@@ -26,12 +26,14 @@ constexpr int ESP_32_TX = 17;
 constexpr uint8_t FRAME_MAGIC = 0xA5;
 constexpr uint8_t FPGA_READY = 0x52;
 
-constexpr uint8_t RES_ALLOW = 0x01;
-constexpr uint8_t RES_DENY = 0x00;
-constexpr uint8_t RES_OK = 0x02;
+static constexpr uint8_t RES_DENY = 0x00;       // CMD_CHECK_UID
+static constexpr uint8_t RES_ALLOW = 0x01;      // CMD_CHECK_UID
+static constexpr uint8_t RES_OK = 0x02;         // CMD_ADD_UID
+static constexpr uint8_t RES_DUPLICATE = 0xEE;  // CMD_ADD_UID
+static constexpr uint8_t RES_FULL_ERR = 0xEF;   // CMD_ADD_UID
 
 constexpr uint32_t READY_TIMEOUT_MS = 1000;
 constexpr uint32_t RESP_TIMEOUT_MS = 1000;
 
-constexpr char WIFI_SSID[] = "SpectrumSetup-90";
-constexpr char WIFI_PASS[] = "BexBright1519";
+constexpr char WIFI_SSID[] = "Sunny 2.4Ghz";
+constexpr char WIFI_PASS[] = "8943667abc";

@@ -1,5 +1,5 @@
-#include <fpga.hpp>
 #include <const.hpp>
+#include <fpga.hpp>
 #include <util.hpp>
 
 // Handles FPGA communication
@@ -62,27 +62,24 @@
 
 // This function sends a command and UID to FPGA and waits for a reply.
 
-FpgaReply fpga_uid_transaction(FpgaCommand cmd, const uint8_t *uid, uint8_t len)
+FpgaReply fpga_uid_transaction(FpgaCommand cmd, const uint8_t* uid, uint8_t len)
 {
 
-    WakeGuard wg(FPGA_WAKE); // Wake FPGA (pull LOW)
-     while (Serial2.available())
-         Serial2.read(); // Clear old data
+    WakeGuard wg(FPGA_WAKE);                     // Wake FPGA (pull LOW)
+    while (Serial2.available()) Serial2.read();  // Clear old data
 
     uint8_t b;
     if (!wait_byte(Serial2, b, READY_TIMEOUT_MS))
     {
-        Serial.println(F("fpga timeout 1"));
         return {FpgaStatus::TimeoutReady, 0};
     }
-    Serial.printf("RX 0x%02X\n", b);
+    Serial.printf("Ready byte response: 0x%02X\n", b);
     if (b != FPGA_READY)
     {
-        Serial.println(F("fpga timeout 1"));
         return {FpgaStatus::TimeoutReady, 0};
     }
 
-    uint8_t crc = crc8(uid, len);
+    uint8_t crc = fpga_crc8_cmd_len_payload((uint8_t)cmd, len, uid);
 
     while (Serial2.available())
     {
@@ -98,30 +95,29 @@ FpgaReply fpga_uid_transaction(FpgaCommand cmd, const uint8_t *uid, uint8_t len)
     uint8_t resp;
     if (!wait_byte(Serial2, resp, RESP_TIMEOUT_MS))
     {
-        Serial.println(F("fpga timeout"));
         return {FpgaStatus::TimeoutResp, 0};
     }
 
-    Serial.printf("RX 0x%02X\n", resp);
+    Serial.printf("Response 0x%02X\n", resp);
     while (Serial2.available())
     {
         uint8_t byte = Serial2.read();
-        Serial.printf("RX 0x%02X\n", byte);
     }
 
     Serial.println(F("fpga ok"));
     return {FpgaStatus::Ok, resp};
 }
 
-bool fpga_is_allowed(const uint8_t *uid, uint8_t len)
+AuthReply fpga_is_allowed(const uint8_t* uid, uint8_t len)
 {
     auto r = fpga_uid_transaction(FpgaCommand::CMD_CHECK_UID, uid, len);
     print_reply(r);
-    return r.status == FpgaStatus::Ok && r.result == RES_ALLOW;
+    return AuthReply::fromFpgaReply(r);
 }
 
-bool fpga_authorize_uid(const uint8_t *uid, uint8_t len)
+AddReply fpga_authorize_uid(const uint8_t* uid, uint8_t len)
 {
     auto r = fpga_uid_transaction(FpgaCommand::CMD_ADD_UID, uid, len);
-    return r.status == FpgaStatus::Ok && r.result == RES_OK;
+    print_reply(r);
+    return AddReply::fromFpgaReply(r);
 }

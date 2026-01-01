@@ -1,15 +1,15 @@
 #include <Arduino.h>
-#include <SPI.h>
 #include <LiquidCrystal.h>
+#include <SPI.h>
 
-#include <const.hpp>
-#include <fpga.hpp>
-#include <WiFi.h>
-#include <wifi.hpp>
-#include <Firebase_ESP_Client.h>
-#include <env.hpp>
 #include <Adafruit_PN532.h>
+#include <Firebase_ESP_Client.h>
+#include <WiFi.h>
 #include <Wire.h>
+#include <const.hpp>
+#include <env.hpp>
+#include <fpga.hpp>
+#include <wifi.hpp>
 LiquidCrystal lcd(LCD_RS, LCD_RW, LCD_E, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
 
 Adafruit_PN532 nfc = Adafruit_PN532(PN532_IRQ, PN532_RSC);
@@ -21,7 +21,7 @@ FirebaseData db;
 FirebaseConfig cfg;
 FirebaseAuth auth;
 MB_String user_base;
-static void log_scan_event(const byte *uid, byte len, bool allowed);
+static void log_scan_event(const byte* uid, byte len, bool allowed);
 void IRAM_ATTR rfid_isr()
 {
     if (mainTask)
@@ -41,7 +41,7 @@ static inline void arm_irq()
     (nfc).startPassiveTargetIDDetection(PN532_MIFARE_ISO14443A);
 }
 
-void lcdPrintf(const char *fmt, ...)
+void lcdPrintf(const char* fmt, ...)
 {
     char buf[33];
     va_list args;
@@ -69,8 +69,7 @@ void lcdPrintf(const char *fmt, ...)
 void setup()
 {
     Serial.begin(115200);
-    while (!Serial)
-        ;
+    while (!Serial);
 
     Serial2.begin(115200, SERIAL_8N1, ESP_32_RX, ESP_32_TX);
     pinMode(PN532_SDA, INPUT_PULLUP);
@@ -81,7 +80,7 @@ void setup()
     digitalWrite(FPGA_WAKE, HIGH);
 
     Wire.begin(PN532_SDA, PN532_SCL);
-    // Wire.setClock(100000);
+    Wire.setClock(100000);
 
     lcd.begin(LCD_COLS, LCD_ROWS);
     lcd.clear();
@@ -150,8 +149,6 @@ void setup()
 
     Serial.println(F("Waiting for cards..."));
     lcdPrintf("Ready");
-    // static const uint8_t test_uid[7] = {0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56};
-    // static const uint8_t test_uid_len = 7;
     // bool allowed = fpga_is_allowed(test_uid, test_uid_len);
 }
 
@@ -159,33 +156,30 @@ void loop()
 {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    uint8_t uid[7];
+    uint8_t uid[10];
     uint8_t uidLength;
     if ((nfc).readDetectedPassiveTargetID(uid, &uidLength))
     {
+        uint8_t uid[10] = {0xDE, 0xAD, 0xBE, 0xEF, 0x12,
+                           0x34, 0x56, 0xFF, 0xFF, 0xFF};
+        uidLength = 10;
         Serial.println(F("Card detected!"));
         lcdPrintf("Card detected");
-        for (byte i = 0; i < uidLength; ++i)
-            Serial.printf("%02X ", uid);
+        for (byte i = 0; i < uidLength; ++i) Serial.printf("%02X ", uid[i]);
         Serial.println();
 
-        bool allowed = fpga_is_allowed(uid, uidLength);
-        if (allowed)
-        {
-            lcdPrintf("Approved!");
-            Serial.println(F("Approved!"));
-        }
-        else
+        auto ar = fpga_is_allowed(uid, uidLength);
+        Serial.printf("CHECK: ok=%d status=%u result=0x%02X\n", ar.success,
+                      (uint8_t)ar.status, ar.result);
+        if (!ar.success)
         {
             lcdPrintf("Not auth");
             Serial.println(F("Not auth"));
+            auto add = fpga_authorize_uid(uid, uidLength);
+            Serial.printf("ADD:   ok=%d status=%u result=0x%02X\n", add.success,
+                          (uint8_t)add.status, add.result);
         }
         // log_scan_event(uid, uidLength, allowed);
-        Serial.print(F("UID: "));
-        for (byte i = 0; i < uidLength; i++)
-        {
-            Serial.printf("%02X ", uid[i]);
-        }
         Serial.println();
         vTaskDelay(3000);
     }
@@ -194,7 +188,7 @@ void loop()
     arm_irq();
 }
 
-static MB_String uid_hex(const byte *uid, byte len)
+static MB_String uid_hex(const byte* uid, byte len)
 {
     MB_String s;
     for (byte i = 0; i < len; ++i)
@@ -208,7 +202,7 @@ static MB_String uid_hex(const byte *uid, byte len)
     return s;
 }
 
-static void log_scan_event(const byte *uid, byte len, bool allowed)
+static void log_scan_event(const byte* uid, byte len, bool allowed)
 {
     if (!Firebase.ready() || auth.token.uid.length() == 0)
     {
