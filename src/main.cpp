@@ -118,33 +118,33 @@ void setup()
     mainTask = xTaskGetCurrentTaskHandle();
     attachInterrupt(digitalPinToInterrupt(PN532_IRQ), rfid_isr, FALLING);
 
-    // cfg.api_key = API_KEY_REAL;
-    // cfg.database_url = DATABASE_URL_REAL;
-    // auth.user.email = EMAIL;
-    // auth.user.password = PASSWORD;
+    cfg.api_key = API_KEY_REAL;
+    cfg.database_url = DATABASE_URL_REAL;
+    auth.user.email = EMAIL;
+    auth.user.password = PASSWORD;
 
-    // Firebase.begin(&cfg, &auth);
-    // Firebase.reconnectNetwork(true);
+    Firebase.begin(&cfg, &auth);
+    Firebase.reconnectNetwork(true);
 
-    // uint32_t t0 = millis();
-    // while (!Firebase.ready() && millis() - t0 < 15000)
-    // {
-    //     delay(50);
-    // }
+    uint32_t t0 = millis();
+    while (!Firebase.ready() && millis() - t0 < 15000)
+    {
+        delay(50);
+    }
 
-    // if (!Firebase.ready())
-    // {
-    //     Serial.println("Firebase not ready after 15s — check API key, Email/Password provider, and DB URL.");
-    //     lcdPrintf("Firebase failed");
-    //     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    // }
-    // else
-    // {
-    //     Serial.println("Signed in");
-    // }
+    if (!Firebase.ready())
+    {
+        Serial.println("Firebase not ready after 15s — check API key, Email/Password provider, and DB URL.");
+        lcdPrintf("Firebase failed");
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    }
+    else
+    {
+        Serial.println("Signed in");
+    }
 
-    // user_base = MB_String("/users/") + auth.token.uid;
-    // Firebase.RTDB.setString(&db, (user_base + "/status").c_str(), "Online");
+    user_base = MB_String("/users/") + auth.token.uid;
+    Firebase.RTDB.setString(&db, (user_base + "/status").c_str(), "Online");
     arm_irq();
 
     Serial.println(F("Waiting for cards..."));
@@ -160,26 +160,36 @@ void loop()
     uint8_t uidLength;
     if ((nfc).readDetectedPassiveTargetID(uid, &uidLength))
     {
-        uint8_t uid[10] = {0xDE, 0xAD, 0xBE, 0xEF, 0x12,
-                           0x34, 0x56, 0xFF, 0xFF, 0xFF};
-        uidLength = 10;
         Serial.println(F("Card detected!"));
         lcdPrintf("Card detected");
-        for (byte i = 0; i < uidLength; ++i) Serial.printf("%02X ", uid[i]);
-        Serial.println();
-
-        auto ar = fpga_is_allowed(uid, uidLength);
+        if (wifi_test(5000)  == WifiHealth::Ok)
+        {
+           
+        auto ar = check_firebase_auth(uid, uidLength);
         Serial.printf("CHECK: ok=%d status=%u result=0x%02X\n", ar.success,
                       (uint8_t)ar.status, ar.result);
         if (!ar.success)
         {
             lcdPrintf("Not auth");
             Serial.println(F("Not auth"));
-            auto add = fpga_authorize_uid(uid, uidLength);
-            Serial.printf("ADD:   ok=%d status=%u result=0x%02X\n", add.success,
-                          (uint8_t)add.status, add.result);
+        }else{
+            lcdPrintf("Authorized");
+            Serial.println(F("Authorized"));
+            auto rem = fpga_authorize_uid(uid, uidLength);
         }
-        // log_scan_event(uid, uidLength, allowed);
+        }else{
+            auto allowed = fpga_is_allowed(uid, uidLength);
+            if (allowed)
+            {
+                lcdPrintf("Authorized");
+                Serial.println(F("Authorized"));
+            }
+            else
+            {
+                lcdPrintf("Not auth");
+                Serial.println(F("Not auth"));
+            }
+        }
         Serial.println();
         vTaskDelay(3000);
     }
@@ -202,31 +212,30 @@ static MB_String uid_hex(const byte* uid, byte len)
     return s;
 }
 
-static void log_scan_event(const byte* uid, byte len, bool allowed)
+static bool check_firebase_auth(const byte* uid, byte len)
 {
     if (!Firebase.ready() || auth.token.uid.length() == 0)
     {
-        Serial.println(F("log skipped: Firebase not ready or no UID token"));
-        return;
+        Serial.println(F("auth check skipped: Firebase not ready or no UID token"));
+        return false;
     }
 
-    FirebaseJson json;
-    json.set("uid", uid_hex(uid, len).c_str());
-    json.set("allowed", allowed);
+    String uidStr = uid_hex(uid, len);
 
-    time_t ts = Firebase.getCurrentTime();
-    if (ts > 0)
+    MB_String path = user_base + "/auth/" + uidStr;
+
+    if (!Firebase.RTDB.get(&db, path.c_str()))
     {
-        json.set("ts", (int)ts);
-    }
-    else
-    {
-        json.set("ts_ms", (int64_t)millis());
+        if (db.httpCode() == FIREBASE_ERROR_PATH_NOT_EXIST)
+        {
+            Serial.println(F("UID not authorized"));
+            return false;
+        }
+
+        Serial.printf("RTDB read failed: %s\n", db.errorReason().c_str());
+        return false;
     }
 
-    MB_String path = user_base + "/scans";
-    if (!Firebase.RTDB.pushJSON(&db, path.c_str(), &json))
-    {
-        Serial.printf("RTDB push failed: %s\n", db.errorReason().c_str());
-    }
+    Serial.println(F("UID authorized"));
+    return true;
 }
