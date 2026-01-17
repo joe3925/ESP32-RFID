@@ -35,5 +35,5 @@ static constexpr uint8_t RES_FULL_ERR = 0xEF;   // CMD_ADD_UID
 constexpr uint32_t READY_TIMEOUT_MS = 1000;
 constexpr uint32_t RESP_TIMEOUT_MS = 1000;
 
-constexpr char WIFI_SSID[] = "Area51";
-constexpr char WIFI_PASS[] = "GreenTD70!#%";
+constexpr char WIFI_SSID[] = "";
+constexpr char WIFI_PASS[] = "";
