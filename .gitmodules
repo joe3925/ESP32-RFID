@@ -1,0 +1,6 @@
+[submodule "external/esp32-dotnet"]
+	path = external/esp32-dotnet
+	url = https://github.com/joe3925/esp32-dotnet.git
+[submodule "external/FPGA-RFID"]
+	path = external/FPGA-RFID
+	url = https://github.com/pasinponsww/FPGA-RFID
